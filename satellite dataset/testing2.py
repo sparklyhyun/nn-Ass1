@@ -20,11 +20,13 @@ NUM_FEATURES = 36
 NUM_CLASSES = 6
 
 learning_rate = 0.01
-epochs = 2000
+epochs = 3000
 batch_size = 32         #per batch
 num_neurons = 10    #hidden layer neurons 
 seed = 10
 np.random.seed(seed)
+decay_param = 10**-6
+print(decay_param)
 
 #read train data
 train_input = np.loadtxt('sat.trn',delimiter=' ')
@@ -38,11 +40,10 @@ trainY[np.arange(train_Y.shape[0]), train_Y-1] = 1 #one hot matrix, K
 print('y: %s'%(train_Y))
 
 # experiment with small datasets
-trainX = trainX[:1000]
-trainY = trainY[:1000]
+#trainX = trainX[:1000]
+#trainY = trainY[:1000]
 
 n = trainX.shape[0]         #no. of rows
-
 
 
 '''Initializing weights and biases for hidden perceptron layer & output softmax layer '''
@@ -64,25 +65,26 @@ y_ = tf.placeholder(tf.float32, [None, NUM_CLASSES])        #for output, need on
 
 # placeholder for hidden layer neurons
 z = tf.placeholder(tf.float32, [None, num_neurons])
+# placeholder for K
+k = tf.placeholder(tf.float32, train_Y.shape)
 
 #from input to hidden perceptron layer
 z = tf.matmul(x,W) + b   #syaptic input to hidden layer, 10 x 6 
 h = tf.nn.sigmoid(z)        #perceptron, thus sigmod function, 10 x 6
 
-#from hidden to output layer, output = y, output softmax layer 
+#from hidden to output softmax layer 
 u = tf.matmul(h, V) + c
+p = tf.exp(u)/tf.reduce_sum(tf.exp(u), axis = 1, keepdims = True)
+y = tf.argmax(p, axis = 1)
 
-'''
-p = tf.exp(u)/tf.reduce_sum(tf.exp(u), axis = 1, keepdims = True)       #keepdims - keep dimension of tensor
-y = tf.argmax(p, axis = 1) #returns type int64
-'''
-print(u)
-
-
-
-##Cost function, need to be modified later
-cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_, logits=u) #logits = p worked for a while 
+#Cost function (softmax)
+cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_, logits=u) 
 loss = tf.reduce_mean(cross_entropy)
+
+#implementing l2 regularizer
+regularizer = tf.nn.l2_loss(V)
+loss = tf.reduce_mean(loss + decay_param * regularizer) #loss_V
+
 
 # Create the gradient descent optimizer with the given learning rate.
 optimizer = tf.train.GradientDescentOptimizer(learning_rate)
