@@ -21,22 +21,20 @@ NUM_CLASSES = 6
 
 learning_rate = 0.01
 epochs = 5000
-#batch_size = 32 
-batch_size = [4, 8, 16, 32, 64]
-num_neurons = 10    #hidden layer neurons 
+batch_size = 32
+num_neurons = 15   #hidden layer neurons 
 seed = 10
 np.random.seed(seed)
-decay_param = 10**-6
-print("decay parameter: %g" %decay_param)
+decay_param = [0, 10**-3, 10**-6, 10**-9, 10**-12]  
 
 #read train data
 train_input = np.loadtxt('sat.trn',delimiter=' ')
-trainX, train_Y = train_input[:,:36], train_input[:,-1].astype(int)                      # X -> 36 features, Y -> output
+trainX, train_Y = train_input[:,:36], train_input[:,-1].astype(int)                      
 trainX = scale(trainX, np.min(trainX, axis=0), np.max(trainX, axis=0))  
-train_Y[train_Y == 7] = 6                                                                                    # output 7 -> class 6
+train_Y[train_Y == 7] = 6                                                                                    
 
-trainY = np.zeros((train_Y.shape[0], NUM_CLASSES)) #shape[0] - no. of rows in Y
-trainY[np.arange(train_Y.shape[0]), train_Y-1] = 1 #one hot matrix, K
+trainY = np.zeros((train_Y.shape[0], NUM_CLASSES)) 
+trainY[np.arange(train_Y.shape[0]), train_Y-1] = 1
 
 print('train data read')
 
@@ -52,10 +50,10 @@ testY[np.arange(test_Y.shape[0]), test_Y-1] = 1 #one hot matrix, K
 print('test data read')
 
 # experiment with small datasets
-#trainX = trainX[:1000]
-#trainY = trainY[:1000]
-#testX = testX[:1000]
-#testY = testY[:1000]
+trainX = trainX[:1000]
+trainY = trainY[:1000]
+testX = testX[:1000]
+testY = testY[:1000]
   
 
 #Initializing weights and biases for hidden perceptron layer & output softmax layer 
@@ -94,6 +92,7 @@ cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_, logits=u)
 loss = tf.reduce_mean(cross_entropy)
 
 #implementing l2 regularizer - or just use reduce_mean?
+'''
 regularizer = tf.nn.l2_loss(V)
 loss = tf.reduce_mean(loss + decay_param * regularizer) #loss_V
 
@@ -103,7 +102,7 @@ train_op = optimizer.minimize(loss)
 
 correct_prediction = tf.cast(tf.equal(tf.argmax(u, 1), tf.argmax(y_, 1)), tf.float32)
 accuracy = tf.reduce_mean(correct_prediction)
-
+'''
 
 # running training & testing 
 err_= [[],[],[],[],[]]
@@ -111,13 +110,21 @@ err_batch = []
 acc_test = [[],[],[],[],[]]
 training_time = [[],[],[],[],[]]
 print('test once per epoch')
-def batch_training(batch_size, a, b):
+
+def batch_training(batch_size, a, d):
+    #implementing l2 regularizer - or just use reduce_mean?
+    regularizer = tf.nn.l2_loss(V)
+    loss = tf.reduce_mean(loss + decay_param[d] * regularizer) #loss_V
+
+    # Create the gradient descent optimizer with the given learning rate.
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+    train_op = optimizer.minimize(loss)
+
+    correct_prediction = tf.cast(tf.equal(tf.argmax(u, 1), tf.argmax(y_, 1)), tf.float32)
+    accuracy = tf.reduce_mean(correct_prediction)
     print('batch start')
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        #err_ = []
-        #err_batch = []
-        #acc_test = []
         trainX_batch = np.array_split(trainX, batch_size)
         trainY_batch = np.array_split(trainY, batch_size)
         for i in range(epochs):
@@ -136,28 +143,30 @@ def batch_training(batch_size, a, b):
             err_batch[:] = []
 
             #test
-            acc_test[b].append(accuracy.eval(feed_dict = {x: testX, y_:testY}))
+            acc_test[a].append(accuracy.eval(feed_dict = {x: testX, y_:testY}))
 
             if i % 1000 == 0:
-                print('iter %d: accuracy %g error:%g'%(i, acc_test[b][i], err_[a][i]))
+                print('iter %d: accuracy %g error:%g'%(i, acc_test[a][i], err_[a][i]))
         print('learning & testing done')
+    return 
 
-batch_training(batch_size[0], 0, 0) #batch size - 4
-batch_training(batch_size[1], 1, 1) #batch size - 8
-batch_training(batch_size[2], 2, 2) #batch size - 16
-batch_training(batch_size[3], 3, 3) #batch size - 32
-batch_training(batch_size[4], 4, 4) #batch size - 64
+batch_training(batch_size, 0, 0) #decay_param = 0
+batch_training(batch_size, 1, 1) #decay_param = 0**-3
+#batch_training(batch_size, 2, 2) #decay_param = 10**-6
+#batch_training(batch_size, 3, 3) #decay_param = 10**-9
+#batch_training(batch_size, 4, 4) #decay_param = 10**-12
 
- # plot Q2 - training errors against no. of epoch
+# plot Q2 - training errors against no. of epoch
 plt.figure(1)
 plt.plot(range(epochs), err_[0])
 plt.plot(range(epochs), err_[1])
-plt.plot(range(epochs), err_[2])
-plt.plot(range(epochs), err_[3])
-plt.plot(range(epochs), err_[4])
+#plt.plot(range(epochs), err_[2])
+#plt.plot(range(epochs), err_[3])
+#plt.plot(range(epochs), err_[4])
 plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('classification error')
-plt.legend(['batch size = 4', 'batch size = 8', 'batch size = 16', 'batch size = 32', 'batch size = 64'])
+#plt.legend(['decay_param = 0', 'decay_param = 10**-3', 'decay_param = 10**-6', 'decay_param = 10**-9', 'decay_param = 10**-12'])
+plt.legend(['decay_param = 0', 'decay_param = 10**-3'])
 plt.title('Q2. training error')
 #plt.savefig('plots/Qn2(1).png)
 
@@ -165,12 +174,13 @@ plt.title('Q2. training error')
 plt.figure(2)
 plt.plot(range(epochs), acc_test[0])
 plt.plot(range(epochs), acc_test[1])
-plt.plot(range(epochs), acc_test[2])
-plt.plot(range(epochs), acc_test[3])
-plt.plot(range(epochs), acc_test[4])
+#plt.plot(range(epochs), acc_test[2])
+#plt.plot(range(epochs), acc_test[3])
+#plt.plot(range(epochs), acc_test[4])
 plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('test accuracy')
-plt.legend(['batch size = 4', 'batch size = 8', 'batch size = 16', 'batch size = 32', 'batch size = 64'])
+#plt.legend(['decay_param = 0', 'decay_param = 10**-3', 'decay_param = 10**-6', 'decay_param = 10**-9', 'decay_param = 10**-12'])
+plt.legend(['decay_param = 0', 'decay_param = 10**-3'])
 plt.title('Q2. test accuracy')
 #plt.savefig('plots/Qn2(2).png')
 
