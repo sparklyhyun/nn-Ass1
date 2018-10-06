@@ -2,8 +2,8 @@ import math
 import tensorflow as tf
 import numpy as np
 import pylab as plt
-
 import os
+import time
 
 #create plots folder, remove comment later
 '''
@@ -21,8 +21,8 @@ NUM_CLASSES = 6
 
 learning_rate = 0.01
 epochs = 2000
-batch_size = 32 
-#batch_size = [4, 8, 16, 32, 64]
+#batch_size = 32 
+batch_size = [4, 8, 16, 32, 64]
 num_neurons = 10    #hidden layer neurons 
 seed = 10
 np.random.seed(seed)
@@ -104,75 +104,84 @@ train_op = optimizer.minimize(loss)
 correct_prediction = tf.cast(tf.equal(tf.argmax(u, 1), tf.argmax(y_, 1)), tf.float32)
 accuracy = tf.reduce_mean(correct_prediction)
 
-#batch size manipulation
-'''
-n_batch = []    #number of batches per each batch size
-n2_batch = []    #number of batches per each batch size
-
-n = trainX.shape[0]
-n_batch.append(math.ceil(n / batch_size))
-n2 = trainY.shape[0]
-n2_batch.append(math.ceil(n / batch_size))
-'''
-
-
 
 # running training & testing 
+err_= [[],[],[],[],[]]
+err_batch = []
+acc_test = [[],[],[],[],[]]
+training_time = [[],[],[],[],[]]
 print('test once per epoch')
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    train_acc = []
-    err_ = []
-    err_batch = []
-    acc_test = []
-    trainX_batch = np.array_split(trainX, batch_size)
-    trainY_batch = np.array_split(trainY, batch_size)
-    
+def batch_training(batch_size, a, b):
+    print('batch start')
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        #err_ = []
+        #err_batch = []
+        #acc_test = []
+        trainX_batch = np.array_split(trainX, batch_size)
+        trainY_batch = np.array_split(trainY, batch_size)
+        for i in range(epochs):
+            #batch'
+            if i == 1:
+                start = time.time() #time taken to train 1 epoch
+            for j in range(len(trainX_batch)):
+                train_op.run(feed_dict={x: trainX_batch[j], y_: trainY_batch[j]})
+                err_batch.append(loss.eval(feed_dict = {x: trainX_batch[j], y_: trainY_batch[j]}))
 
-    for i in range(epochs):
-        #batch'
-        for j in range(len(trainX_batch)):
-            train_op.run(feed_dict={x: trainX_batch[j], y_: trainY_batch[j]})
-            err_batch.append(loss.eval(feed_dict = {x: trainX_batch[j], y_: trainY_batch[j]}))
+            if i==1:
+                training_time[a] = time.time() - start
+                print('time taken to train 1 epoch %f' %(training_time[a]) )
+            
+            err_[a].append(sum(err_batch)/len(err_batch))
+            err_batch[:] = []
 
-        err_.append(sum(err_batch)/len(err_batch))
-        err_batch[:] = []
-        
-        #train
-        #train_op.run(feed_dict={x: trainX, y_: trainY})
-        
-        #test
-        acc_test.append(accuracy.eval(feed_dict = {x: testX, y_:testY}))
+            #test
+            acc_test[b].append(accuracy.eval(feed_dict = {x: testX, y_:testY}))
 
-        if i % 100 == 0:
-            print('iter %d: accuracy %g error:%g'%(i, acc_test[i], err_[i]))           
-    print('learning & testing done')
+            if i % 100 == 0:
+                print('iter %d: accuracy %g error:%g'%(i, acc_test[b][i], err_[a][i]))
+        print('learning & testing done')
+
+batch_training(batch_size[0], 0, 0) #batch size - 4
+batch_training(batch_size[1], 1, 1) #batch size - 8
+batch_training(batch_size[2], 2, 2) #batch size - 16
+batch_training(batch_size[3], 3, 3) #batch size - 32
+batch_training(batch_size[4], 4, 4) #batch size - 64
 
  # plot Q2 - training errors against no. of epoch
-plt.figure(2)
-plt.plot(range(epochs), err_)
+plt.figure(1)
+plt.plot(range(epochs), err_[0])
+plt.plot(range(epochs), err_[1])
+plt.plot(range(epochs), err_[2])
+plt.plot(range(epochs), err_[3])
+plt.plot(range(epochs), err_[4])
 plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('classification error')
+plt.legend(['batch size = 4', 'batch size = 8', 'batch size = 16', 'batch size = 32', 'batch size = 64'])
 plt.title('Q2. training error')
 #plt.savefig('plots/Qn2(1).png)
 
 #plot Q2 - test accurcy against no. of epoch
-plt.figure(3)
-plt.plot(range(epochs), acc_test)
+plt.figure(2)
+plt.plot(range(epochs), acc_test[0])
+plt.plot(range(epochs), acc_test[1])
+plt.plot(range(epochs), acc_test[2])
+plt.plot(range(epochs), acc_test[3])
+plt.plot(range(epochs), acc_test[4])
 plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('test accuracy')
+plt.legend(['batch size = 4', 'batch size = 8', 'batch size = 16', 'batch size = 32', 'batch size = 64'])
 plt.title('Q2. test accuracy')
+#plt.savefig('plots/Qn2(2).png')
+
+#plot Q2 - training tme against each bath size
+plt.figure(3)
+plt.plot(batch_size, training_time)
+plt.xlabel('batch')
+plt.ylabel('test accuracy')
+#plt.legend(['batch size = 4', 'batch size = 8'])
+plt.title('Q2. training time')
 #plt.savefig('plots/Qn2(2).png') 
 
-
-
-
-
-
-# plot Q3
-
-# plot Q4
-
-# plot Q5
 
 plt.show()
