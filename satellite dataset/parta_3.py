@@ -52,12 +52,12 @@ testY[np.arange(test_Y.shape[0]), test_Y-1] = 1 #one hot matrix, K
 print('test data read')
 
 # experiment with small datasets
-'''
+
 trainX = trainX[:1000]
 trainY = trainY[:1000]
 testX = testX[:1000]
 testY = testY[:1000]
-'''
+
 
 # model input & output , x = input, y_ = output (keep this)
 x = tf.placeholder(tf.float32, [None, NUM_FEATURES])        #array - shape of the placeholder, none - 1st dimension can be of any size 

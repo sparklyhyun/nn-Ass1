@@ -16,16 +16,26 @@ if not os.path.isdir('plots'):
 def scale(X, X_min, X_max):
     return (X - X_min)/(X_max-X_min)
 
+#scale lists (for decay param & training time)
+def scale_list(ls):
+    result = list()
+    domain = np.min(ls), np.max(ls)
+    for i in range(len(ls)):
+        result.append( (ls[i] - domain[0])/(domain[1]-domain[0]) )
+    return result
+
+
 NUM_FEATURES = 36
 NUM_CLASSES = 6
 
 learning_rate = 0.01
-epochs = 5000
+epochs = 1000
 batch_size = 32
 num_neurons = 15   #hidden layer neurons 
 seed = 10
 np.random.seed(seed)
-decay_param = [0, 10**-3, 10**-6, 10**-9, 10**-12]  
+decay_param = [0, 10**-3, 10**-6, 10**-9, 10**-12]
+#param_test = [1, 2, 3, 4, 5]
 
 #read train data
 train_input = np.loadtxt('sat.trn',delimiter=' ')
@@ -114,7 +124,7 @@ print('test once per epoch')
 def batch_training(batch_size, a, d):
     #implementing l2 regularizer - or just use reduce_mean?
     regularizer = tf.nn.l2_loss(V)
-    loss = tf.reduce_mean(loss + decay_param[d] * regularizer) #loss_V
+    loss2 = tf.reduce_mean(loss + decay_param[d] * regularizer) #loss_V
 
     # Create the gradient descent optimizer with the given learning rate.
     optimizer = tf.train.GradientDescentOptimizer(learning_rate)
@@ -122,7 +132,7 @@ def batch_training(batch_size, a, d):
 
     correct_prediction = tf.cast(tf.equal(tf.argmax(u, 1), tf.argmax(y_, 1)), tf.float32)
     accuracy = tf.reduce_mean(correct_prediction)
-    print('batch start')
+    
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         trainX_batch = np.array_split(trainX, batch_size)
@@ -145,28 +155,31 @@ def batch_training(batch_size, a, d):
             #test
             acc_test[a].append(accuracy.eval(feed_dict = {x: testX, y_:testY}))
 
-            if i % 1000 == 0:
+            if i % 100 == 0:
                 print('iter %d: accuracy %g error:%g'%(i, acc_test[a][i], err_[a][i]))
         print('learning & testing done')
     return 
 
 batch_training(batch_size, 0, 0) #decay_param = 0
 batch_training(batch_size, 1, 1) #decay_param = 0**-3
-#batch_training(batch_size, 2, 2) #decay_param = 10**-6
-#batch_training(batch_size, 3, 3) #decay_param = 10**-9
-#batch_training(batch_size, 4, 4) #decay_param = 10**-12
+batch_training(batch_size, 2, 2) #decay_param = 10**-6
+batch_training(batch_size, 3, 3) #decay_param = 10**-9
+batch_training(batch_size, 4, 4) #decay_param = 10**-12
+
+train_time_scaled = scale_list(training_time)
+decay_param_scaled = scale_list(decay_param)
 
 # plot Q2 - training errors against no. of epoch
 plt.figure(1)
 plt.plot(range(epochs), err_[0])
 plt.plot(range(epochs), err_[1])
-#plt.plot(range(epochs), err_[2])
-#plt.plot(range(epochs), err_[3])
-#plt.plot(range(epochs), err_[4])
+plt.plot(range(epochs), err_[2])
+plt.plot(range(epochs), err_[3])
+plt.plot(range(epochs), err_[4])
 plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('classification error')
-#plt.legend(['decay_param = 0', 'decay_param = 10**-3', 'decay_param = 10**-6', 'decay_param = 10**-9', 'decay_param = 10**-12'])
-plt.legend(['decay_param = 0', 'decay_param = 10**-3'])
+plt.legend(['decay_param = 0', 'decay_param = 10**-3', 'decay_param = 10**-6', 'decay_param = 10**-9', 'decay_param = 10**-12'])
+#plt.legend(['decay_param = 0', 'decay_param = 10**-3'])
 plt.title('Q2. training error')
 #plt.savefig('plots/Qn2(1).png)
 
@@ -174,20 +187,20 @@ plt.title('Q2. training error')
 plt.figure(2)
 plt.plot(range(epochs), acc_test[0])
 plt.plot(range(epochs), acc_test[1])
-#plt.plot(range(epochs), acc_test[2])
-#plt.plot(range(epochs), acc_test[3])
-#plt.plot(range(epochs), acc_test[4])
+plt.plot(range(epochs), acc_test[2])
+plt.plot(range(epochs), acc_test[3])
+plt.plot(range(epochs), acc_test[4])
 plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('test accuracy')
-#plt.legend(['decay_param = 0', 'decay_param = 10**-3', 'decay_param = 10**-6', 'decay_param = 10**-9', 'decay_param = 10**-12'])
-plt.legend(['decay_param = 0', 'decay_param = 10**-3'])
+plt.legend(['decay_param = 0', 'decay_param = 10**-3', 'decay_param = 10**-6', 'decay_param = 10**-9', 'decay_param = 10**-12'])
+#plt.legend(['decay_param = 0', 'decay_param = 10**-3'])
 plt.title('Q2. test accuracy')
 #plt.savefig('plots/Qn2(2).png')
 
 #plot Q2 - training tme against each bath size
 plt.figure(3)
-plt.plot(batch_size, training_time)
-plt.xlabel('batch')
+plt.plot(decay_param_scaled, training_time)   
+plt.xlabel('decay parameter')
 plt.ylabel('training time')
 #plt.legend(['batch size = 4', 'batch size = 8'])
 plt.title('Q2. training time')
