@@ -20,8 +20,9 @@ NUM_FEATURES = 36
 NUM_CLASSES = 6
 
 learning_rate = 0.01
-epochs = 20000
-batch_size = 32         #{4, 8, 16, 32, 64}  <- how to make use of this????? 
+epochs = 2000
+batch_size = 32 
+#batch_size = [4, 8, 16, 32, 64]
 num_neurons = 10    #hidden layer neurons 
 seed = 10
 np.random.seed(seed)
@@ -31,10 +32,10 @@ print("decay parameter: %g" %decay_param)
 #read train data
 train_input = np.loadtxt('sat.trn',delimiter=' ')
 trainX, train_Y = train_input[:,:36], train_input[:,-1].astype(int)                      # X -> 36 features, Y -> output
-trainX = scale(trainX, np.min(trainX, axis=0), np.max(trainX, axis=0))           # appropriate scaling
+trainX = scale(trainX, np.min(trainX, axis=0), np.max(trainX, axis=0))  
 train_Y[train_Y == 7] = 6                                                                                    # output 7 -> class 6
 
-trainY = np.zeros((train_Y.shape[0], NUM_CLASSES)) #shape[0] - no. of rows in Y, num_classes - 6 columns
+trainY = np.zeros((train_Y.shape[0], NUM_CLASSES)) #shape[0] - no. of rows in Y
 trainY[np.arange(train_Y.shape[0]), train_Y-1] = 1 #one hot matrix, K
 
 print('train data read')
@@ -51,21 +52,21 @@ testY[np.arange(test_Y.shape[0]), test_Y-1] = 1 #one hot matrix, K
 print('test data read')
 
 # experiment with small datasets
-#trainX = trainX[:1000]
-#trainY = trainY[:1000]
+trainX = trainX[:1000]
+trainY = trainY[:1000]
+testX = testX[:1000]
+testY = testY[:1000]
+  
 
-n = trainX.shape[0]         #no. of rows
-
-
-'''Initializing weights and biases for hidden perceptron layer & output softmax layer '''
-#from input to hidden layer (output 36 x 10)
+#Initializing weights and biases for hidden perceptron layer & output softmax layer 
+#from input to hidden layer
 W = tf.Variable(tf.truncated_normal([NUM_FEATURES, num_neurons],
                                    stddev  = 1.0/math.sqrt(float(NUM_FEATURES))), name = 'W') 
 b = tf.Variable(tf.zeros([num_neurons]), name = 'b')
 
-#from hidden to output layer (output 10 x 6)
+#from hidden to output layer
 V = tf.Variable(tf.truncated_normal([num_neurons, NUM_CLASSES],
-                                    stddev = 1.0 / math.sqrt(float(num_neurons)), name = 'V')) #np or maths?
+                                    stddev = 1.0 / math.sqrt(float(num_neurons)), name = 'V'))
 c = tf.Variable(tf.zeros([NUM_CLASSES]), name = 'c')
 
 
@@ -92,7 +93,7 @@ y = tf.argmax(p, axis = 1)
 cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_, logits=u) 
 loss = tf.reduce_mean(cross_entropy)
 
-#implementing l2 regularizer
+#implementing l2 regularizer - or just use reduce_mean?
 regularizer = tf.nn.l2_loss(V)
 loss = tf.reduce_mean(loss + decay_param * regularizer) #loss_V
 
@@ -103,48 +104,51 @@ train_op = optimizer.minimize(loss)
 correct_prediction = tf.cast(tf.equal(tf.argmax(u, 1), tf.argmax(y_, 1)), tf.float32)
 accuracy = tf.reduce_mean(correct_prediction)
 
+#batch size manipulation
+'''
+n_batch = []    #number of batches per each batch size
+n2_batch = []    #number of batches per each batch size
 
-print('test once per epoch?')
+n = trainX.shape[0]
+n_batch.append(math.ceil(n / batch_size))
+n2 = trainY.shape[0]
+n2_batch.append(math.ceil(n / batch_size))
+'''
+
+
+
+# running training & testing 
+print('test once per epoch')
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     train_acc = []
     err_ = []
+    err_batch = []
     acc_test = []
- 
-    for i in range(epochs):
-        
-        train_op.run(feed_dict={x: trainX, y_: trainY})
-        #train_acc.append(accuracy.eval(feed_dict={x: trainX, y_: trainY}))
-        err_.append(loss.eval(feed_dict = {x: trainX, y_: trainY}))
+    trainX_batch = np.array_split(trainX, batch_size)
+    trainY_batch = np.array_split(trainY, batch_size)
+    
 
-        #test model?
-        #y2 = sess.run(y, {x: testX})
-        acc_test.append(accuracy.eval(feed_dict = {x: testX, y_:testY}))
+    for i in range(epochs):
+        #batch'
+        for j in range(len(trainX_batch)):
+            train_op.run(feed_dict={x: trainX_batch[j], y_: trainY_batch[j]})
+            err_batch.append(loss.eval(feed_dict = {x: trainX_batch[j], y_: trainY_batch[j]}))
+
+        err_.append(sum(err_batch)/len(err_batch))
+        err_batch[:] = []
         
-        if i % 1000 == 0:
-            #print('iter %d: accuracy %g error:%g'%(i, train_acc[i], err_[i]))
-            #print('error:%g'%(i,err_[i]))
-            print('iter %d: accuracy %g error:%g'%(i, acc_test[i], err_[i]))
+        #train
+        #train_op.run(feed_dict={x: trainX, y_: trainY})
+        
+        #test
+        acc_test.append(accuracy.eval(feed_dict = {x: testX, y_:testY}))
+
+        if i % 100 == 0:
+            print('iter %d: accuracy %g error:%g'%(i, acc_test[i], err_[i]))           
     print('learning & testing done')
 
-    '''
-    #test model
-    y2 = sess.run(y,{x : testX})
-    acc_test = []
-    acc_test.append(accuracy.eval(feed_dict = {x: testX, y_:testY}))
-    print('y2 : {}'.format(y2))
-    '''
-'''
-# plot learning curves
-plt.figure(1)
-plt.plot(range(epochs), train_acc)
-plt.xlabel(str(epochs) + ' iterations')
-plt.ylabel('Train accuracy')
-plt.title('GD Learing')
-'''
-#plt.savefig('plots/Qn1.png')
-
-# plot Q2 - training errors, test accuracies, against no. of epoch
+ # plot Q2 - training errors against no. of epoch
 plt.figure(2)
 plt.plot(range(epochs), err_)
 plt.xlabel(str(epochs) + 'iterations')
@@ -152,13 +156,18 @@ plt.ylabel('classification error')
 plt.title('Q2. training error')
 #plt.savefig('plots/Qn2(1).png)
 
-
+#plot Q2 - test accurcy against no. of epoch
 plt.figure(3)
 plt.plot(range(epochs), acc_test)
 plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('test accuracy')
 plt.title('Q2. test accuracy')
 #plt.savefig('plots/Qn2(2).png') 
+
+
+
+
+
 
 # plot Q3
 
