@@ -15,7 +15,7 @@ if not os.path.isdir('plots'):
 # scale data
 def scale(X, X_min, X_max):
     return (X - X_min)/(X_max-X_min)
-
+'''
 #scale lists (for decay param & training time)
 def scale_list(ls):
     result = list()
@@ -23,15 +23,15 @@ def scale_list(ls):
     for i in range(len(ls)):
         result.append( (ls[i] - domain[0])/(domain[1]-domain[0]) )
     return result
-
+'''
 
 NUM_FEATURES = 36
 NUM_CLASSES = 6
 
 learning_rate = 0.01
 epochs = 1000
-batch_size = 32
-num_neurons = 15   #hidden layer neurons 
+batch_size = 16
+num_neurons = 20   #hidden layer neurons 
 seed = 10
 np.random.seed(seed)
 decay_param = [0, 10**-3, 10**-6, 10**-9, 10**-12]
@@ -64,55 +64,36 @@ trainX = trainX[:1000]
 trainY = trainY[:1000]
 testX = testX[:1000]
 testY = testY[:1000]
+
+# model input & output , x = input, y_ = output
+x = tf.placeholder(tf.float32, [None, NUM_FEATURES])        
+y_ = tf.placeholder(tf.float32, [None, NUM_CLASSES]) 
   
 
 #Initializing weights and biases for hidden perceptron layer & output softmax layer 
-#from input to hidden layer
-W = tf.Variable(tf.truncated_normal([NUM_FEATURES, num_neurons],
-                                   stddev  = 1.0/math.sqrt(float(NUM_FEATURES))), name = 'W') 
-b = tf.Variable(tf.zeros([num_neurons]), name = 'b')
+weights = {
+    #from input to hidden layer
+    'w1' : tf.Variable(tf.truncated_normal([NUM_FEATURES, num_neurons],
+                                   stddev  = 1.0/math.sqrt(float(NUM_FEATURES)))),
+    #from hidden layer to output layer
+    'out' : tf.Variable(tf.truncated_normal([num_neurons, NUM_CLASSES],
+                                   stddev  = 1.0/math.sqrt(float(NUM_FEATURES)))) 
+    }
 
-#from hidden to output layer
-V = tf.Variable(tf.truncated_normal([num_neurons, NUM_CLASSES],
-                                    stddev = 1.0 / math.sqrt(float(num_neurons)), name = 'V'))
-c = tf.Variable(tf.zeros([NUM_CLASSES]), name = 'c')
+biases = {
+    #from input to hidden layer
+    'b1' : tf.Variable(tf.zeros([num_neurons])),
+    #from hidden layer  to output layer
+    'out' : tf.Variable(tf.zeros([NUM_CLASSES]))
+    }
 
+def network_3_layer(x):
+    hidden1 = tf.add(tf.matmul(x, weights['w1']), biases['b1'])
+    hidden1_out = tf.sigmoid(hidden1)
+    output = tf.matmul(hidden1_out, weights['out']) + biases['out']
+    return output 
 
-'''model input & output'''
-# model input & output , x = input, y_ = output
-x = tf.placeholder(tf.float32, [None, NUM_FEATURES])        #array - shape of the placeholder, none - 1st dimension can be of any size 
-y_ = tf.placeholder(tf.float32, [None, NUM_CLASSES])        #for output, need one more layer in between
-
-# placeholder for hidden layer neurons
-z = tf.placeholder(tf.float32, [None, num_neurons])
-# placeholder for K
-k = tf.placeholder(tf.float32, train_Y.shape)
-
-#from input to hidden perceptron layer
-z = tf.matmul(x,W) + b   #syaptic input to hidden layer, 10 x 6 
-h = tf.nn.sigmoid(z)        #perceptron, thus sigmod function, 10 x 6
-
-#from hidden to output softmax layer 
-u = tf.matmul(h, V) + c
-p = tf.exp(u)/tf.reduce_sum(tf.exp(u), axis = 1, keepdims = True)
-y = tf.argmax(p, axis = 1)
-
-#Cost function (softmax)
-cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_, logits=u) 
-loss = tf.reduce_mean(cross_entropy)
-
-#implementing l2 regularizer - or just use reduce_mean?
-'''
-regularizer = tf.nn.l2_loss(V)
-loss = tf.reduce_mean(loss + decay_param * regularizer) #loss_V
-
-# Create the gradient descent optimizer with the given learning rate.
-optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-train_op = optimizer.minimize(loss)
-
-correct_prediction = tf.cast(tf.equal(tf.argmax(u, 1), tf.argmax(y_, 1)), tf.float32)
-accuracy = tf.reduce_mean(correct_prediction)
-'''
+logits = network_3_layer(x)
 
 # running training & testing 
 err_= [[],[],[],[],[]]
@@ -121,22 +102,29 @@ acc_test = [[],[],[],[],[]]
 training_time = [[],[],[],[],[]]
 print('test once per epoch')
 
-def batch_training(batch_size, a, d):
-    #implementing l2 regularizer - or just use reduce_mean?
-    regularizer = tf.nn.l2_loss(V)
-    loss2 = tf.reduce_mean(loss + decay_param[d] * regularizer) #loss_V
+def decay_param_training(a, d):
+    #Cost function (softmax)
+    cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_, logits=logits) 
+    loss = tf.reduce_mean(cross_entropy)
+    
+    #implementing l2 regularizer for 3 layer network
+    regularizer = tf.nn.l2_loss(weights['w1']) + tf.nn.l2_loss(weights['out'])
+    loss = tf.reduce_mean(loss+ d * regularizer)
 
     # Create the gradient descent optimizer with the given learning rate.
     optimizer = tf.train.GradientDescentOptimizer(learning_rate)
     train_op = optimizer.minimize(loss)
 
-    correct_prediction = tf.cast(tf.equal(tf.argmax(u, 1), tf.argmax(y_, 1)), tf.float32)
+    correct_prediction = tf.cast(tf.equal(tf.argmax(logits, 1), tf.argmax(y_, 1)), tf.float32)
     accuracy = tf.reduce_mean(correct_prediction)
     
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        trainX_batch = np.array_split(trainX, batch_size)
-        trainY_batch = np.array_split(trainY, batch_size)
+        #need to change the batch size 
+        trainX_batch = [trainX[i * batch_size : (i +1) * batch_size]
+                    for i in range((trainX.shape[0] + batch_size -1)// batch_size)]
+        trainY_batch = [trainY[i * batch_size : (i +1) * batch_size]
+                    for i in range((trainY.shape[0] + batch_size -1)// batch_size)]
         for i in range(epochs):
             #batch'
             if i == 1:
@@ -160,14 +148,11 @@ def batch_training(batch_size, a, d):
         print('learning & testing done')
     return 
 
-batch_training(batch_size, 0, 0) #decay_param = 0
-batch_training(batch_size, 1, 1) #decay_param = 0**-3
-batch_training(batch_size, 2, 2) #decay_param = 10**-6
-batch_training(batch_size, 3, 3) #decay_param = 10**-9
-batch_training(batch_size, 4, 4) #decay_param = 10**-12
-
-train_time_scaled = scale_list(training_time)
-decay_param_scaled = scale_list(decay_param)
+decay_param_training(0, decay_param[0]) #decay_param = 0
+decay_param_training(1, decay_param[1]) #decay_param = 0**-3
+decay_param_training(2, decay_param[2]) #decay_param = 10**-6
+decay_param_training(3, decay_param[3]) #decay_param = 10**-9
+decay_param_training(4, decay_param[4]) #decay_param = 10**-12
 
 # plot Q2 - training errors against no. of epoch
 plt.figure(1)
@@ -199,12 +184,11 @@ plt.title('Q2. test accuracy')
 
 #plot Q2 - training tme against each bath size
 plt.figure(3)
-plt.plot(decay_param_scaled, training_time)   
+plt.plot(decay_param, training_time)   
 plt.xlabel('decay parameter')
 plt.ylabel('training time')
 #plt.legend(['batch size = 4', 'batch size = 8'])
 plt.title('Q2. training time')
-#plt.savefig('plots/Qn2(2).png') 
-
+#plt.savefig('plots/Qn2(2).png')
 
 plt.show()
