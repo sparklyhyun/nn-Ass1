@@ -20,7 +20,7 @@ NUM_FEATURES = 36
 NUM_CLASSES = 6
 
 learning_rate = 0.01
-epochs = 5000
+epochs = 2000
 #batch_size = 32 
 batch_size = [4, 8, 16, 32, 64]
 num_neurons = 10    #hidden layer neurons 
@@ -31,9 +31,9 @@ print("decay parameter: %g" %decay_param)
 
 #read train data
 train_input = np.loadtxt('sat.trn',delimiter=' ')
-trainX, train_Y = train_input[:,:36], train_input[:,-1].astype(int)                      # X -> 36 features, Y -> output
+trainX, train_Y = train_input[:,:36], train_input[:,-1].astype(int)                      
 trainX = scale(trainX, np.min(trainX, axis=0), np.max(trainX, axis=0))  
-train_Y[train_Y == 7] = 6                                                                                    # output 7 -> class 6
+train_Y[train_Y == 7] = 6                                                                                    
 
 trainY = np.zeros((train_Y.shape[0], NUM_CLASSES)) #shape[0] - no. of rows in Y
 trainY[np.arange(train_Y.shape[0]), train_Y-1] = 1 #one hot matrix, K
@@ -52,56 +52,54 @@ testY[np.arange(test_Y.shape[0]), test_Y-1] = 1 #one hot matrix, K
 print('test data read')
 
 # experiment with small datasets
-#trainX = trainX[:1000]
-#trainY = trainY[:1000]
-#testX = testX[:1000]
-#testY = testY[:1000]
+trainX = trainX[:1000]
+trainY = trainY[:1000]
+testX = testX[:1000]
+testY = testY[:1000]
   
+# model input & output , x = input, y_ = output
+x = tf.placeholder(tf.float32, [None, NUM_FEATURES])       
+y_ = tf.placeholder(tf.float32, [None, NUM_CLASSES])      
 
 #Initializing weights and biases for hidden perceptron layer & output softmax layer 
-#from input to hidden layer
-W = tf.Variable(tf.truncated_normal([NUM_FEATURES, num_neurons],
-                                   stddev  = 1.0/math.sqrt(float(NUM_FEATURES))), name = 'W') 
-b = tf.Variable(tf.zeros([num_neurons]), name = 'b')
+weights = {
+    #from input to hidden layer
+    'w1' : tf.Variable(tf.truncated_normal([NUM_FEATURES, num_neurons],
+                                   stddev  = 1.0/math.sqrt(float(NUM_FEATURES)))),
+    #from hidden layer to output layer
+    'out' : tf.Variable(tf.truncated_normal([num_neurons, NUM_CLASSES],
+                                   stddev  = 1.0/math.sqrt(float(NUM_FEATURES)))) 
+    }
 
-#from hidden to output layer
-V = tf.Variable(tf.truncated_normal([num_neurons, NUM_CLASSES],
-                                    stddev = 1.0 / math.sqrt(float(num_neurons)), name = 'V'))
-c = tf.Variable(tf.zeros([NUM_CLASSES]), name = 'c')
+biases = {
+    #from input to hidden layer
+    'b1' : tf.Variable(tf.zeros([num_neurons])),
+    #from hidden layer  to output layer
+    'out' : tf.Variable(tf.zeros([NUM_CLASSES]))
+    }
+
+def network_3_layer(x):
+    hidden1 = tf.add(tf.matmul(x, weights['w1']), biases['b1'])
+    hidden1_out = tf.sigmoid(hidden1)
+    output = tf.matmul(hidden1_out, weights['out']) + biases['out']
+    return output 
+
+logits = network_3_layer(x)
 
 
-'''model input & output'''
-# model input & output , x = input, y_ = output
-x = tf.placeholder(tf.float32, [None, NUM_FEATURES])        #array - shape of the placeholder, none - 1st dimension can be of any size 
-y_ = tf.placeholder(tf.float32, [None, NUM_CLASSES])        #for output, need one more layer in between
-
-# placeholder for hidden layer neurons
-z = tf.placeholder(tf.float32, [None, num_neurons])
-# placeholder for K
-k = tf.placeholder(tf.float32, train_Y.shape)
-
-#from input to hidden perceptron layer
-z = tf.matmul(x,W) + b   #syaptic input to hidden layer, 10 x 6 
-h = tf.nn.sigmoid(z)        #perceptron, thus sigmod function, 10 x 6
-
-#from hidden to output softmax layer 
-u = tf.matmul(h, V) + c
-p = tf.exp(u)/tf.reduce_sum(tf.exp(u), axis = 1, keepdims = True)
-y = tf.argmax(p, axis = 1)
-
-#Cost function (softmax)
-cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_, logits=u) 
+#Cost function for 3 layer network (softmax)
+cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_, logits=logits) 
 loss = tf.reduce_mean(cross_entropy)
 
-#implementing l2 regularizer - or just use reduce_mean?
-regularizer = tf.nn.l2_loss(V)
-loss = tf.reduce_mean(loss + decay_param * regularizer) #loss_V
+#implementing l2 regularizer for 3 layer network
+regularizer = tf.nn.l2_loss(weights['w1']) + tf.nn.l2_loss(weights['out'])
+loss = tf.reduce_mean(loss+ decay_param * regularizer)
 
 # Create the gradient descent optimizer with the given learning rate.
 optimizer = tf.train.GradientDescentOptimizer(learning_rate)
 train_op = optimizer.minimize(loss)
 
-correct_prediction = tf.cast(tf.equal(tf.argmax(u, 1), tf.argmax(y_, 1)), tf.float32)
+correct_prediction = tf.cast(tf.equal(tf.argmax(logits, 1), tf.argmax(y_, 1)), tf.float32)
 accuracy = tf.reduce_mean(correct_prediction)
 
 
@@ -115,11 +113,11 @@ def batch_training(batch_size, a, b):
     print('batch start')
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        #err_ = []
-        #err_batch = []
-        #acc_test = []
-        trainX_batch = np.array_split(trainX, batch_size)
-        trainY_batch = np.array_split(trainY, batch_size)
+        #need to change the batch size 
+        trainX_batch = [trainX[i * batch_size : (i +1) * batch_size]
+                    for i in range((trainX.shape[0] + batch_size -1)// batch_size)]
+        trainY_batch = [trainY[i * batch_size : (i +1) * batch_size]
+                    for i in range((trainY.shape[0] + batch_size -1)// batch_size)]
         for i in range(epochs):
             #batch'
             if i == 1:
@@ -138,7 +136,7 @@ def batch_training(batch_size, a, b):
             #test
             acc_test[b].append(accuracy.eval(feed_dict = {x: testX, y_:testY}))
 
-            if i % 1000 == 0:
+            if i % 100 == 0:
                 print('iter %d: accuracy %g error:%g'%(i, acc_test[b][i], err_[a][i]))
         print('learning & testing done')
 
