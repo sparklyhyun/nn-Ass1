@@ -115,15 +115,13 @@ def change_neuron_number(a, n):
                     for i in range((trainY.shape[0] + batch_size -1)// batch_size)]
         for i in range(epochs):
             #batch'
-            if i == 1:
-                start = time.time() #time taken to train 1 epoch
+            start = time.time() #time taken to train 1 epoch
             for j in range(len(trainX_batch)):
                 train_op.run(feed_dict={x: trainX_batch[j], y_: trainY_batch[j]})
                 err_batch.append(loss.eval(feed_dict = {x: trainX_batch[j], y_: trainY_batch[j]}))
 
-            if i==1:
-                training_time[a] = time.time() - start
-                print('time taken to train 1 epoch %f' %(training_time[a]) )
+            training_time[a] += (time.time() - start)
+                
             
             err_[a].append(sum(err_batch)/len(err_batch))
             err_batch[:] = []
@@ -134,6 +132,8 @@ def change_neuron_number(a, n):
             if i % 100 == 0:
                 print('iter %d: accuracy %g error:%g'%(i, acc_test[a][i], err_[a][i]))
         print('learning & testing done')
+        training_time[a] = training_time[a] / 1000
+        print('time taken to train 1 epoch %f' %(training_time[a]) )
     return
 
 change_neuron_number(0, 5) #no. neuron - 5

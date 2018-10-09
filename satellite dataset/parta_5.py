@@ -148,15 +148,13 @@ with tf.Session() as sess:
     #train 3 layer network first
     for i in range(epochs):
         #batch
-        if i == 1:
-            start = time.time() 
+        start = time.time() 
         for j in range(len(trainX_batch)):
             train_op3.run(feed_dict={x: trainX_batch[j], y_: trainY_batch[j]})
             err_batch.append(loss3.eval(feed_dict = {x: trainX_batch[j], y_: trainY_batch[j]}))
 
-        if i==1:
-            training_time[0] = time.time() - start
-            print('time taken to train 1 epoch %f' %(training_time[0]) )
+        training_time[0] += (time.time() - start)
+        print('time taken to train 1 epoch %f' %(training_time[0]) )
         
         err_[0].append(sum(err_batch)/len(err_batch))
         err_batch[:] = []
@@ -167,19 +165,21 @@ with tf.Session() as sess:
         if i % 100 == 0:
             print('iter %d: accuracy %g error:%g'%(i, acc_test[0][i], err_[0][i]))
     print('3 layer done')
+    training_time[0] = training_time[0] / 1000
+    print('time taken to train 1 epoch %f' %(training_time[0]) )
     
     #train 4 layer network
     for i in range(epochs):
     #batch
-        if i == 1:
-            start = time.time() 
+
+        start = time.time() 
         for j in range(len(trainX_batch)):
             train_op4.run(feed_dict={x: trainX_batch[j], y_: trainY_batch[j]})
             err_batch.append(loss4.eval(feed_dict = {x: trainX_batch[j], y_: trainY_batch[j]}))
 
-        if i==1:
-            training_time[1] = time.time() - start
-            print('time taken to train 1 epoch %f' %(training_time[1]) )
+
+        training_time[1] = time.time() - start
+            
         
         err_[1].append(sum(err_batch)/len(err_batch))
         err_batch[:] = []
@@ -191,6 +191,8 @@ with tf.Session() as sess:
             print('iter %d: accuracy %g error:%g'%(i, acc_test[1][i], err_[1][i]))
     
     print('learning & testing done')
+    training_time[0] = training_time[0] / 1000
+    print('time taken to train 1 epoch %f' %(training_time[1]) )
 
 
 # plot Q2 - training errors against no. of epoch
