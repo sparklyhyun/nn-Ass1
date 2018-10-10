@@ -76,7 +76,7 @@ def change_neuron_number(a, n):
                                    stddev  = 1.0/math.sqrt(float(NUM_FEATURES)))),
         #from hidden layer to output layer
         'out' : tf.Variable(tf.truncated_normal([n, NUM_CLASSES],
-                                   stddev  = 1.0/math.sqrt(float(NUM_FEATURES)))) 
+                                   stddev  = 1.0/math.sqrt(float(n)))) 
     }
     
     biases = {

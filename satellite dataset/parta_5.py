@@ -68,10 +68,10 @@ weights = {
                                    stddev  = 1.0/math.sqrt(float(NUM_FEATURES)))),
     #from hidden layer 1 to hidden layer 2
     'w2' : tf.Variable(tf.truncated_normal([num_neurons, num_neurons],
-                                   stddev  = 1.0/math.sqrt(float(NUM_FEATURES)))),
+                                   stddev  = 1.0/math.sqrt(float(num_neurons)))),
     #from hidden layer 2 to output layer
     'out' : tf.Variable(tf.truncated_normal([num_neurons, NUM_CLASSES],
-                                   stddev  = 1.0/math.sqrt(float(NUM_FEATURES)))) 
+                                   stddev  = 1.0/math.sqrt(float(num_neurons)))) 
     }
 
 biases = {
