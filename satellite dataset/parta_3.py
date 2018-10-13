@@ -20,7 +20,7 @@ NUM_FEATURES = 36
 NUM_CLASSES = 6
 
 learning_rate = 0.01
-epochs = 2000
+epochs = 1000
 batch_size = 16 # chosen from batch_size = [4, 8, 16, 32, 64]
 num_neurons = [5, 10, 15,20, 25]
 #num_neurons = 10     
@@ -173,7 +173,7 @@ plt.savefig('plots/Qn3(2).png')
 
 #plot Q2 - training tme against each bath size
 plt.figure(3)
-plt.plot(num_neurons, training_time)
+plt.plot(range(len(num_neurons)), training_time)
 plt.xticks(range(len(num_neurons)), num_neurons)
 plt.xlabel('number of hidden layer neurons')
 plt.ylabel('test accuracy')

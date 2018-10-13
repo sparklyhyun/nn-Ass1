@@ -20,7 +20,7 @@ NUM_CLASSES = 6
 learning_rate = 0.01
 epochs = 1000
 batch_size = 16
-num_neurons = 20   #hidden layer neurons 
+num_neurons = 15   #hidden layer neurons 
 seed = 10
 np.random.seed(seed)
 decay_param = [0, 10**-3, 10**-6, 10**-9, 10**-12]
