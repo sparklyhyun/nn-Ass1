@@ -6,36 +6,24 @@ import os
 import time
 
 #create plots folder, remove comment later
-'''
 if not os.path.isdir('plots'):
     print('create figures folder')
     os.makedirs('plots')
-'''
 
 # scale data
 def scale(X, X_min, X_max):
     return (X - X_min)/(X_max-X_min)
-'''
-#scale lists (for decay param & training time)
-def scale_list(ls):
-    result = list()
-    domain = np.min(ls), np.max(ls)
-    for i in range(len(ls)):
-        result.append( (ls[i] - domain[0])/(domain[1]-domain[0]) )
-    return result
-'''
 
 NUM_FEATURES = 36
 NUM_CLASSES = 6
 
 learning_rate = 0.01
-epochs = 100
+epochs = 1000
 batch_size = 16
 num_neurons = 20   #hidden layer neurons 
 seed = 10
 np.random.seed(seed)
 decay_param = [0, 10**-3, 10**-6, 10**-9, 10**-12]
-#param_test = [1, 2, 3, 4, 5]
 
 #read train data
 train_input = np.loadtxt('sat.trn',delimiter=' ')
@@ -60,10 +48,12 @@ testY[np.arange(test_Y.shape[0]), test_Y-1] = 1 #one hot matrix, K
 print('test data read')
 
 # experiment with small datasets
+'''
 trainX = trainX[:1000]
 trainY = trainY[:1000]
 testX = testX[:1000]
 testY = testY[:1000]
+'''
 
 # model input & output , x = input, y_ = output
 x = tf.placeholder(tf.float32, [None, NUM_FEATURES])        
@@ -167,8 +157,8 @@ plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('classification error')
 plt.legend(['decay_param = 0', 'decay_param = 10**-3', 'decay_param = 10**-6', 'decay_param = 10**-9', 'decay_param = 10**-12'])
 #plt.legend(['decay_param = 0', 'decay_param = 10**-3'])
-plt.title('Q2. training error')
-#plt.savefig('plots/Qn2(1).png)
+plt.title('Q4. training error')
+plt.savefig('plots/Qn4(1).png')
 
 #plot Q2 - test accurcy against no. of epoch
 plt.figure(2)
@@ -181,16 +171,18 @@ plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('test accuracy')
 plt.legend(['decay_param = 0', 'decay_param = 10**-3', 'decay_param = 10**-6', 'decay_param = 10**-9', 'decay_param = 10**-12'])
 #plt.legend(['decay_param = 0', 'decay_param = 10**-3'])
-plt.title('Q2. test accuracy')
-#plt.savefig('plots/Qn2(2).png')
+plt.title('Q4. test accuracy')
+plt.savefig('plots/Qn4(2).png')
 
+'''
 #plot Q2 - training tme against each bath size
 plt.figure(3)
-plt.plot(decay_param, training_time)   
+plt.plot(range(len(decay_param)), training_time)
+plt.xticks(range(len(decay_param)), decay_param)
 plt.xlabel('decay parameter')
 plt.ylabel('training time')
 #plt.legend(['batch size = 4', 'batch size = 8'])
-plt.title('Q2. training time')
-#plt.savefig('plots/Qn2(2).png')
-
+plt.title('Q4. training time')
+#plt.savefig('plots/Qn4(2).png')
+'''
 plt.show()

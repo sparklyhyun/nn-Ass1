@@ -6,11 +6,11 @@ import os
 import time
 
 #create plots folder, remove comment later
-'''
+
 if not os.path.isdir('plots'):
     print('create figures folder')
     os.makedirs('plots')
-'''
+
 
 # scale data
 def scale(X, X_min, X_max):
@@ -52,12 +52,12 @@ testY[np.arange(test_Y.shape[0]), test_Y-1] = 1 #one hot matrix, K
 print('test data read')
 
 # experiment with small datasets
-
+'''
 trainX = trainX[:1000]
 trainY = trainY[:1000]
 testX = testX[:1000]
 testY = testY[:1000]
-
+'''
 # model input & output , x = input, y_ = output (keep this)
 x = tf.placeholder(tf.float32, [None, NUM_FEATURES])        #array - shape of the placeholder, none - 1st dimension can be of any size 
 y_ = tf.placeholder(tf.float32, [None, NUM_CLASSES])        #for output, need one more layer in between
@@ -155,7 +155,7 @@ plt.ylabel('classification error')
 #plt.legend(['no. of neuron - 5','no. of neuron - 10'])
 plt.legend(['no. of neuron - 5','no. of neuron - 10', 'no. of neuron - 15', 'no. of neuron - 20', 'no. of neuron - 25'])
 plt.title('Q3. training error')
-#plt.savefig('plots/Qn2(1).png)
+plt.savefig('plots/Qn3(1).png')
 
 #plot Q2 - test accurcy against no. of epoch
 plt.figure(2)
@@ -169,15 +169,16 @@ plt.ylabel('test accuracy')
 #plt.legend(['no. of neuron - 5','no. of neuron - 10'])
 plt.legend(['no. of neuron - 5','no. of neuron - 10', 'no. of neuron - 15', 'no. of neuron - 20', 'no. of neuron - 25'])
 plt.title('Q3. test accuracy')
-#plt.savefig('plots/Qn2(2).png')
+plt.savefig('plots/Qn3(2).png')
 
 #plot Q2 - training tme against each bath size
 plt.figure(3)
 plt.plot(num_neurons, training_time)
+plt.xticks(range(len(num_neurons)), num_neurons)
 plt.xlabel('number of hidden layer neurons')
 plt.ylabel('test accuracy')
 plt.title('Q3. training time')
-#plt.savefig('plots/Qn2(2).png') 
+plt.savefig('plots/Qn3(2).png') 
 
 
 plt.show()

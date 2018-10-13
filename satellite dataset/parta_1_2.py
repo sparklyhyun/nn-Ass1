@@ -6,11 +6,9 @@ import os
 import time
 
 #create plots folder, remove comment later
-'''
 if not os.path.isdir('plots'):
     print('create figures folder')
     os.makedirs('plots')
-'''
 
 # scale data
 def scale(X, X_min, X_max):
@@ -20,7 +18,7 @@ NUM_FEATURES = 36
 NUM_CLASSES = 6
 
 learning_rate = 0.01
-epochs = 200
+epochs = 1000
 #batch_size = 32 
 batch_size = [4, 8, 16, 32, 64]
 num_neurons = 10    #hidden layer neurons 
@@ -52,10 +50,12 @@ testY[np.arange(test_Y.shape[0]), test_Y-1] = 1 #one hot matrix, K
 print('test data read')
 
 # experiment with small datasets
+'''
 trainX = trainX[:1000]
 trainY = trainY[:1000]
 testX = testX[:1000]
 testY = testY[:1000]
+'''
   
 # model input & output , x = input, y_ = output
 x = tf.placeholder(tf.float32, [None, NUM_FEATURES])       
@@ -158,7 +158,7 @@ plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('classification error')
 plt.legend(['batch size = 4', 'batch size = 8', 'batch size = 16', 'batch size = 32', 'batch size = 64'])
 plt.title('Q2. training error')
-#plt.savefig('plots/Qn2(1).png)
+plt.savefig('plots/Qn2(1).png')
 
 #plot Q2 - test accurcy against no. of epoch
 plt.figure(2)
@@ -171,16 +171,17 @@ plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('test accuracy')
 plt.legend(['batch size = 4', 'batch size = 8', 'batch size = 16', 'batch size = 32', 'batch size = 64'])
 plt.title('Q2. test accuracy')
-#plt.savefig('plots/Qn2(2).png')
+plt.savefig('plots/Qn2(2).png')
 
 #plot Q2 - training tme against each bath size
 plt.figure(3)
-plt.plot(batch_size, training_time)
+plt.plot(range(len(batch_size)), training_time)
+plt.xticks(range(len(batch_size)), batch_size)
 plt.xlabel('batch')
 plt.ylabel('training time')
 #plt.legend(['batch size = 4', 'batch size = 8'])
 plt.title('Q2. training time')
-#plt.savefig('plots/Qn2(2).png') 
+plt.savefig('plots/Qn2(3).png') 
 
 
 plt.show()

@@ -6,11 +6,9 @@ import os
 import time
 
 #create plots folder, remove comment later
-'''
 if not os.path.isdir('plots'):
     print('create figures folder')
     os.makedirs('plots')
-'''
 
 # scale data
 def scale(X, X_min, X_max):
@@ -51,10 +49,12 @@ testY[np.arange(test_Y.shape[0]), test_Y-1] = 1 #one hot matrix, K
 print('test data read')
 
 # experiment with small datasets
+'''
 trainX = trainX[:1000]
 trainY = trainY[:1000]
 testX = testX[:1000]
 testY = testY[:1000]
+'''
 
 # model input & output , x = input, y_ = output
 x = tf.placeholder(tf.float32, [None, NUM_FEATURES])        
@@ -201,8 +201,8 @@ plt.plot(range(epochs), err_[1])
 plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('classification error')
 plt.legend(['3 layer network', '4 layer network'])
-plt.title('Q2. training error')
-#plt.savefig('plots/Qn2(1).png)
+plt.title('Q5. training error')
+plt.savefig('plots/Qn5(1).png')
 
 #plot Q2 - test accurcy against no. of epoch
 plt.figure(2)
@@ -211,8 +211,7 @@ plt.plot(range(epochs), acc_test[1])
 plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('test accuracy')
 plt.legend(['3 layer network', '4 layer network'])
-plt.title('Q2. test accuracy')
-#plt.savefig('plots/Qn2(2).png')
-
+plt.title('Q5. test accuracy')
+plt.savefig('plots/Qn5(2).png')
 
 plt.show()
