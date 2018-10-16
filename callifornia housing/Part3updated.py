@@ -24,6 +24,7 @@ beta = 10 ** -3  # weight decay parameter
 no_folds = 5  # 5 fold cross validation
 
 seed = 10
+tf.set_random_seed(seed)
 np.random.seed(seed)
 
 # Load data from dataset for analysis
@@ -154,7 +155,7 @@ def main():
     plt.xlabel('Number of Epochs')
     plt.ylabel('Mean CV Error Across all Epochs')  # the mean square error is high because it is a squared error.
     # also the values for y is very high
-    plt.title('3 Layer Feedforward Neural Network, GD Learning')
+    plt.title('Mini-Batch GD Learning')
     plt.legend()
     plt.show()
 
@@ -166,15 +167,13 @@ def main():
     plt.plot(hidden_neurons, cv_err_final)
     plt.xlabel('Number of Hidden Neurons')
     plt.ylabel('Final Cross-Validation Error')
-    plt.title('Comparison of Cross-Validation Errors of Different Number of Hidden Neurons')
+    figure_title="Cross-Validation Errors of Different No of Hidden Neurons"
+    plt.title(figure_title, y=1.08)
     plt.show()
 
-    # Optimal number of hidden neurons is the one that gives the lowest CV error
-    besthn=hidden_neurons[np.argmin(cv_err_final)]
+    # Optimal number of hidden neurons is the one that gives the lowest CV error while having less Neurons
+    besthn=40
     print('Number of hidden neurons that gives lowest error: {}'.format(besthn))
-
-    # Split the training and test set
-    trainXV, testXV, trainYV, testYV = model_selection.train_test_split(X_data, Y_data, test_size=0.3, random_state=42)
 
     # Standardise test data
     stdtestXV = (testXV - np.mean(trainXV, axis=0)) / np.std(trainXV, axis=0)
@@ -205,7 +204,7 @@ def main():
             for start, end in zip(range(0, N, batch_size), range(batch_size, N, batch_size)):
                 train_op.run(feed_dict={x: stdtrainXV[start:end], y_: trainYV[start:end]})
 
-                # Tests error for 1 batch
+                # Test error for 1 batch
                 batch_test_err.append(loss.eval(feed_dict={x: stdtestXV, y_: testYV}))
 
             # Test error for epochs: Mean batch error
@@ -216,7 +215,7 @@ def main():
     plt.plot(range(epochs), test_err)
     plt.xlabel('Number of Epochs')
     plt.ylabel('Mean Test Error Across Folds')
-    plt.title('3 Layer Feedforward Neural Network, GD Learning')
+    plt.title('Mini-Batch GD Learning')
     plt.show()
 
 

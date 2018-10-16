@@ -24,6 +24,7 @@ no_folds=5 # 5 fold cross validation
 
 # Initialise random seed
 seed = 10
+tf.set_random_seed(seed)
 np.random.seed(seed)
 
 # Load data from dataset for analysis
@@ -152,7 +153,7 @@ def main():
     plt.xlabel('Number of Epochs')
     plt.ylabel('Mean Cross-Validation Error')
     # also the values for y is very high
-    plt.title('3 Layer Feedforward Neural Network, GD Learning')
+    plt.title('Mini-Batch GD Learning')
     plt.legend()
     plt.show()
 
@@ -164,15 +165,13 @@ def main():
     plt.plot(learning_rate, cv_err_final)
     plt.xlabel('Learning Rate')
     plt.ylabel('Final Cross-Validation Error')
-    plt.title('Comparison of Final Cross-Validation Errors with Different Learning Rates')
+    figure_title="Cross-Validation Errors with Different Learning Rates"
+    plt.title(figure_title, y=1.08)
     plt.show()
 
     # Optimal learning rate is the one that gives the lowest CV error
     bestlr=learning_rate[np.argmin(cv_err_final)]
     print('learning rate that gives lowest error: {}'.format(bestlr))
-
-    # Split the training and test set again
-    trainXV, testXV, trainYV, testYV = model_selection.train_test_split(X_data, Y_data, test_size=0.3, random_state=42)
 
     # Standardise test data
     stdtrainXV= (trainXV-np.mean(trainXV,axis=0))/np.std(trainXV, axis=0)
@@ -215,7 +214,7 @@ def main():
     plt.plot(range(epochs), test_err, label='Learning Rate= {}'.format(bestlr))
     plt.xlabel('Number of Epochs')
     plt.ylabel('Mean Test Error')
-    plt.title('3 Layer Feedforward Neural Network, GD Learning')
+    plt.title('Mini-Batch GD Learning')
     plt.legend()
     plt.show()
 

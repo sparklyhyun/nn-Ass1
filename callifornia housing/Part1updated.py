@@ -1,6 +1,7 @@
 
 #Project 1 Part b
 
+
 # Read the data from the file ‘california_housing.data’.
 # Each data sample is a row of 9 values: 8 input attributes and the median housing price as targets.
 # Divide the dataset at 70:30 ratio for validation and testing datasets.
@@ -23,13 +24,14 @@ os.chdir('/Users/Charlene/Desktop/REP 4/Neural Networks and Deep Learning/Assign
 NUM_FEATURES = 8
 no_labels=1
 
-# arameters
+# parameters
 epochs = 500
 learning_rate = 10**-7
 batch_size = 32
 num_neuron = 30
 beta=10**-3
 seed = 10
+tf.set_random_seed(seed)
 np.random.seed(seed)
 
 print('lr: {}, decay parameter: {}'.format(learning_rate,beta ))
@@ -50,7 +52,7 @@ def train(para):
     X_data, Y_data = X_data[idx], Y_data[idx]
 
     # Experiment with small databases
-    X_data, Y_data = X_data[:1000], Y_data [:1000]
+    # X_data, Y_data = X_data[:1000], Y_data [:1000]
     trainX, testX, trainY, testY = model_selection.train_test_split(X_data, Y_data, test_size=0.3, random_state=42)
 
     trainY_ = trainY.reshape(len(trainY), no_labels)
@@ -129,6 +131,7 @@ def train(para):
     plt.plot(range(50), testY_[:50], marker='x', label='Targeted Value',linestyle='None')
     plt.xlabel('Number of Samples')
     plt.ylabel('Mean Housing Prices')
+    plt.title('Predicted and Target Values for any 50 Test Samples')
     plt.legend()
     plt.show()
 
@@ -144,7 +147,7 @@ def main():
     plt.plot(range(epochs), trainerr, label = 'Validation Error')
     plt.xlabel(str(epochs) + ' iterations')
     plt.ylabel('Mean Square Validation Error')
-    plt.title('3 Layer Feedforward Neural Network, GD Learning')
+    plt.title('Mini-Batch GD Learning')
     plt.legend()
     plt.show()
 

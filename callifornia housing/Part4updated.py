@@ -20,11 +20,12 @@ no_labels=1
 # Parameters
 learning_rate=10**-9
 epochs = 500
-neurons_firsthiddenlayer=80
+neurons_firsthiddenlayer=40
 hidden_neurons=20
 beta=10**-3
 
 seed = 10
+tf.set_random_seed(seed)
 np.random.seed(seed)
 
 batch_size=32
@@ -180,36 +181,67 @@ def train(prob):
     N = len(trainX_)
     idx = np.arange(N)
 
+    # Need to start 3 new sessions so that weights are biases are initialised for each session
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 
-        test_err3, test_err4, test_err5=[],[], []
-
+        test_err3=[]
         for i in range(epochs):
             # Randomly shuffle the training data in each epoch
             np.random.shuffle(idx)
             trainXX = trainX_[idx]
             trainYY = trainY[idx]
 
-            test_err3_batch, test_err4_batch, test_err5_batch=[], [], []
+            test_err3_batch=[]
 
             # Train the network for the different layers using mini-batch gradient descent
             for start, end in zip(range(0, N, batch_size), range(batch_size, N, batch_size)):
                 train_op3.run(feed_dict={x: trainXX[start:end], y_: trainYY[start:end], keep_prob: prob})
                 # Batch error
                 test_err3_batch.append(loss3.eval(feed_dict={x:testX_, y_: testY, keep_prob: prob}))
+
+            # for multiple epochs: Mean batch error
+            test_err3.append(sum(test_err3_batch) / len(test_err3_batch))
+
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+
+        test_err4=[]
+        for i in range(epochs):
+            #Randomly shuffle training data in each epoch
+            np.random.shuffle(idx)
+            trainXX = trainX_[idx]
+            trainYY = trainY[idx]
+
+            test_err4_batch=[]
+            for start, end in zip(range(0, N, batch_size), range(batch_size, N, batch_size)):
                 train_op4.run(feed_dict={x: trainXX[start:end], y_: trainYY[start:end], keep_prob:prob})
                 # Batch error
                 test_err4_batch.append(loss4.eval(feed_dict={x: testX_, y_: testY, keep_prob: prob}))
 
+            # for multiiple epochs: Mean batch error
+            test_err4.append(sum(test_err4_batch) / len(test_err4_batch))
+
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+
+        test_err5=[]
+
+        for i in range(epochs):
+            #Randomly shuffle training data in each epoch
+            np.random.shuffle(idx)
+            trainXX = trainX_[idx]
+            trainYY = trainY[idx]
+
+            test_err5_batch=[]
+            for start, end in zip(range(0, N, batch_size), range(batch_size, N, batch_size)):
                 train_op5.run(feed_dict={x: trainXX[start:end], y_: trainYY[start:end], keep_prob:prob})
                 # Batch error
                 test_err5_batch.append(loss5.eval(feed_dict={x: testX_, y_: testY, keep_prob: prob}))
 
-            #for multiiple epochs: Mean batch error
-            test_err3.append(sum(test_err3_batch)/len(test_err3_batch))
-            test_err4.append(sum(test_err4_batch)/len(test_err4_batch))
+            # for multiiple epochs: Mean batch error
             test_err5.append(sum(test_err5_batch)/len(test_err5_batch))
+
 
     test_err=[test_err3, test_err4, test_err5]
 
@@ -232,20 +264,23 @@ def main():
     plt.plot(range(epochs), test_errwdropout[2], label='5 layers Neural Network')
     plt.xlabel('Number of Epochs')
     plt.ylabel('Test Errors with Dropouts')
-    plt.title('GD Learning')
+    plt.title('Mini-Batch GD Learning')
     plt.legend()
     plt.show()
 
+
     # plot learning curves
-    plt.figure(1)
+    plt.figure(2)
     plt.plot(range(epochs), test_errwodropout[0], label='3 layers Neural Network')
     plt.plot(range(epochs), test_errwodropout[1], label='4 layers Neural Network')
     plt.plot(range(epochs), test_errwodropout[2], label='5 layers Neural Network')
     plt.xlabel('Number of Epochs')
     plt.ylabel('Test Errors without Dropouts')
-    plt.title('GD Learning')
+    plt.title('Mini-Batch GD Learning')
     plt.legend()
     plt.show()
+
+
 
 if __name__ == '__main__':
   main()
