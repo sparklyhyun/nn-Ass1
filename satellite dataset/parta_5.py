@@ -95,7 +95,22 @@ def network_3_layer(x):
     hidden1 = tf.add(tf.matmul(x, weights['w1']), biases['b1'])
     hidden1_out = tf.sigmoid(hidden1)
     output = tf.matmul(hidden1_out, weights['out']) + biases['out']
-    return output #need to apply softmax later 
+    return output #need to apply softmax later
+
+def resetWeights():
+    #need to reset the weight before training 4 layer network 
+    weights['w1'] = tf.Variable(tf.truncated_normal([NUM_FEATURES, num_neurons],
+                                   stddev  = 1.0/math.sqrt(float(NUM_FEATURES))))
+    weights['out'] = tf.Variable(tf.truncated_normal([num_neurons, NUM_CLASSES],
+                                   stddev  = 1.0/math.sqrt(float(num_neurons))))
+    return
+
+def resetBiases():
+    #need to reset the biases before training the 4 layer network
+    biases['b1'] =  tf.Variable(tf.zeros([num_neurons]))
+    biases['out'] = tf.Variable(tf.zeros([NUM_CLASSES]))
+    return
+
 
 logits3 = network_3_layer(x)
 print('here') 
@@ -168,6 +183,9 @@ with tf.Session() as sess:
     print('time taken to train 1 epoch %f' %(training_time[0]) )
     
     #train 4 layer network
+    #reset weights and biases first
+    resetWeights()
+    resetBiases()
     for i in range(epochs):
     #batch
         training_time_1 = 0
@@ -202,7 +220,7 @@ plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('classification error')
 plt.legend(['3 layer network', '4 layer network'])
 plt.title('Q5. training error')
-plt.savefig('plots/Qn5(1).png')
+plt.savefig('plots/Qn5(1)_new.png')
 
 #plot Q2 - test accurcy against no. of epoch
 plt.figure(2)
@@ -212,6 +230,6 @@ plt.xlabel(str(epochs) + 'iterations')
 plt.ylabel('test accuracy')
 plt.legend(['3 layer network', '4 layer network'])
 plt.title('Q5. test accuracy')
-plt.savefig('plots/Qn5(2).png')
+plt.savefig('plots/Qn5(2)_new.png')
 
 plt.show()
